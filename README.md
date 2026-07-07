@@ -1,95 +1,130 @@
-# Sqills assessment
+# Sqills Assessment
 
-## How to run & build the project
+## How to Run & Build the Project
 
-For development make sure you have the required dependencies installed on your machine:
-- node
+For development, make sure you have the following dependencies installed on your machine:
+- Node.js
 - npm
 
 **Steps**
 
-1. run `npm install` to install the required dependencies
-2. run `npm run dev` to start the development server
-3. to build the production application run `npm run build`
-4. to localy deploy the production build run `serve -s dist` 
+1. Run `npm install` to install the required dependencies.
+2. Run `npm run dev` to start the development server.
+3. Run `npm run build` to build the production application.
+4. Run `serve -s dist` to locally preview the production build.
 
-## Architectures notes
+## Architecture Overview
 
-### Process 
+*To be written after implementation — 1–2 paragraphs summarising the final component structure, key decisions, and how the three components (ThemeProvider, Autocomplete, Multi-Origin-Destination Filter) compose together in the demo app.*
 
-#### Steps
+## Design & Theming Approach
 
-1. Analyse the requirements, ask questions, make sure the whole context is clear.
-2. build this document before coding
-3. review docs by claude to ensure i have the right technical direction
-- Prompt: `Hey claude, here is my assesment and my thought process and technical direction. Review this, give me feedback and make sure i follow best practices..After this, return the whole md file in correct english and good structure.`
+*To be written after implementation — palette, spacing tokens, light/dark mode strategy, and how `useThemeMode` is exposed and consumed.*
 
-9. Review code by claude code
+## Accessibility Notes
 
-### Technical approach
+*To be written after implementation — roles, keyboard support, focus management, and contrast considerations actually applied in the components.*
 
-#### Scope 1.
-Look at the documentation of MUI, i expect it to be suffiencent.
+## Planning Notes
 
-#### Scope 2.
-> Search input with debounced filtering (configurable; default 200 ms)
+The sections below capture the thought process and technical direction used to plan this assignment, written before implementation started.
 
-- I think it's good to have it configurable, because depending on the use case the debounce can be configed. The purpose of a debounced search input can be for example to improve the UX, you don't want any unnessesery screen changes. Also you dont want to unnesseary spam your backend service with request. To improve the search function in the frontend you can maybe, depending on the use case, give suggestions and use the lebenstheins algoritme to improve the input.
-- For the test data for after a quick search i found [Intl.DisplayNames](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames) an javascript and widely support object. This seems like a nice solution to fill the search input because i don't need to add a random dependency that needs to be maintained or adds an possible security risk in the future. But using this will clash with the empty state, loading and no-result requirement because this object always has results
-- For the other features of the autocomplete i expect MUI to have build-in support. I always prefer to use MUI and stick to its implementation instead of adding custom behavior. Because it takes more time, has to be maintained and adds complexity. 
-- To improve UX and accessibilty you want to always show the label (mui default behavior). But have guiding labels and placeholders that steer the users in the right direction.
+### Process
 
-*(optional)*
-- Because it can support a async data hook. I would seperate the logic of the input and the data fetch. For example to put the data logic inside a context so that it the data can be accesssed anywhere within the context. Then this data logic can also be tested in isolation. Also i would lazy load the options (if the options don't exceed a large number of options) so that it's not blocking and the user can directly select the options when aviable 
+1. Analyse the requirements, ask questions, and make sure the whole context is clear.
+2. Write this planning document before starting to code.
+3. Review the document with Claude to validate the technical direction before implementation.
+   - Prompt used: *"Hey Claude, here is my assessment and my thought process and technical direction. Review this, give me feedback and make sure I follow best practices. After this, return the whole md file in correct English and good structure."*
+4. Review the implemented code with Claude Code.
 
-#### Scope 3.
-- Because its multiple inputs with a relation. i would recommend to put it inside a form and let for example React Hook Form, e handle the form state, so that you can add some basic validation. like for example that the origin and destination can't be the same.
-- For the input use MUI default inputs
+### Technical Approach
 
+#### Scope 1 — ThemeProvider
 
-#### Technical setup
+MUI's own theming documentation is sufficient for this scope: defining a light/dark palette, spacing tokens, and exposing a `useThemeMode` hook to toggle between modes.
 
-- Typescript
+#### Scope 2 — Autocomplete with Search & Match Highlighting
+
+- **Debounce:** The debounce duration will be configurable, since the right value depends on the use case. A debounced search input improves UX (avoiding unnecessary UI churn) and reduces unnecessary load on the backend by limiting request frequency.
+- **Test data:** I initially considered [`Intl.DisplayNames`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames) as a source of realistic option data, since it's a native, widely supported JavaScript API and avoids adding a dependency that would need to be maintained and could introduce a future security risk. However, this API always returns results, which conflicts with the empty, loading, and no-results state requirements — so it isn't used as the data source; static/mocked data is used instead (see Assumptions).
+- **Built-in behaviour:** For the remaining autocomplete features, MUI's `Autocomplete` component provides most of what's needed out of the box. I'm relying on MUI's implementation rather than adding custom behaviour, since custom logic takes longer to build, needs ongoing maintenance, and adds complexity.
+- **Accessibility:** Labels remain always visible (MUI's default behaviour), paired with clear guiding labels and placeholders that help steer users toward the right input.
+
+**Data-fetching: `useAutocompleteData` hook, not Context**
+
+The component supports an async data source (`onSearch(query) => Promise<Option[]>`), so the data-fetching logic is separated from the input's presentation logic. I'm implementing this as a custom hook (`useAutocompleteData`) rather than a Context provider.
+
+Reasoning:
+- A Context is justified when multiple, unrelated components need access to the *same* data instance — for example, a shared cache, shared subscription, or state that must stay in sync across the tree.
+- In this assignment, the data is scoped to a single Autocomplete instance at a time (the origin field and destination field in Scope 3 each query independently). There's no shared state to synchronise, so a Context would add an extra layer of indirection (provider setup, consumer wiring) without a corresponding benefit.
+- A hook keeps the logic colocated with the component that uses it, is simpler to reason about, and is just as easy to unit test in isolation (call the hook via `renderHook`, assert on returned state).
+- If a future requirement introduced shared/cached lookups across multiple components (e.g. the same station list reused in several places with a shared cache), that would be the point to introduce a Context or a dedicated data layer — not before.
+
+Options are lazily loaded where the result set is reasonably small, so the UI isn't blocked and users can select as soon as data becomes available (see Assumptions on list size).
+
+*Optional, out of scope for the core implementation:*
+- A Levenshtein-distance-based suggestion feature could improve the search experience further, but this is beyond the assignment's scope.
+
+#### Scope 3 — Multi-Origin-Destination Filter
+
+- Since this involves multiple related inputs, I'm wrapping them in a form and letting React Hook Form manage form state, enabling basic validation — for example, ensuring origin and destination aren't the same.
+- The inputs themselves use MUI's default components rather than custom ones.
+
+#### Technical Setup
+
+- TypeScript
 - React
 - Vite
-- Mui
+- MUI
 
+### Testing
 
-**Testing**
+Unit testing uses Vitest with React Testing Library. Tests stay simple and clear. For MUI components, only a happy-path test is written, and the underlying MUI inputs aren't separately tested, since MUI is a well-established library with thorough test coverage of its own. Custom logic is always tested.
 
-For unit testing i would to with Vitest or React Testing Framework. Keep it simple and write clear unit tests. For the MUI components i would normaly only write a happy test scenario and don't extra test the MUI inputs because mui is a wellknown library that has thurowly tested it's components. If you have some custom logic its always good to test that. I think that writing test scenario's that could also function as documentation (concept TDD) is really strong because when you read the test you know what the purpose of the functionality is, somethimes that describily is worth more then for example "if i type "a" the input contains a. Better would be "Its possible to mirror the destination and origin so that the user can plan it's way back more easier" for example. It's always good to try to test as much as these relevant tests at unit to that the end-to-end or integration tests can be as briefly as possible because those tests are more expenisive (time-wise for example)
+Test descriptions are written to double as documentation (in the spirit of TDD): a test named "allows the user to mirror destination and origin to plan their return journey more easily" communicates intent far better than something like "typing 'a' populates the input." Solid unit test coverage also allows integration and end-to-end tests to stay minimal, since those are comparatively expensive to write and run.
 
+### Out of Scope
 
+- **Storybook:** For a feature of this size, I'd normally build and test components in Storybook first — especially for larger features — and discuss them with design and stakeholders before final implementation, to validate direction early and iterate cheaply. For smaller changes, I'd only add Storybook entries if the component is meant to be shared or become part of a design system.
+- **Integration/E2E testing:** I'd use Cypress or Playwright, potentially combined with Cucumber, to verify the feature integrates correctly with the rest of the application.
+- **Mocking services:** Mock Service Worker or WireMock, combined with Faker.js for realistic mock data, would be my choice for integration testing — but this is overkill at this stage.
+- **API client generation:** For the async data hook, I'd normally use a generator like Orval to produce a typed API client from an OpenAPI spec. Overkill for this stage.
+- **Authentication:** In a real project, I'd expect authenticated calls to backend services, likely via Axios or an Orval-generated client with an interceptor handling JWT-based authorization. CASL could handle frontend permission checks — always paired with equivalent checks on the backend, since frontend-only permission checks are not a substitute for backend enforcement.
+- **Localisation** (e.g. i18n) is out of scope.
+- **CI/CD pipeline** setup is out of scope.
 
-*Out of scope*
-- For developing this new feature i would build and test it in storybook (speccialy if its a big feature), disscuss it with design, stakeholders before implementing it in the final application. To make sure the right thing is build and we could iterate on it before implementing it in the final application. For smaller changes i would only add it to storybook if the new component is relevant ( e.g. gonna be shared or part of the design system)
-- For intergration and/or end-to-end testing i would use Cypress or Playwright in combination with Cucumber to ensure the new feature seamlessly blends in.
-- To mock the services for intergration testing we could use mock service worker or WireMock in combination with Fakerjs to ensure we have realistic mock data. I think for this stage it's overkill.
-- Normaly for the async data hook i would recommand using Orval or another OpenApi client/types generator to ensure type-safelty of the data that would be returned and you can call the generated client. At this stage this is overkill.
-- Normaly to have a secure async call to the backend services i expected to have authentication setup in the project. You could use axios or orval and implement the interceptor that handles the authorization with jwt-decode, CASL could be use for frontend permission checking (its alway importent to also have these checks in the backend of course, otherwise you can get the fifa accident from a couple days ago) 
-- Localisation with for example i18n is out of scope
-- building a CI/CD pipeline is out of scope.
+### Open Questions
 
-### Questions
-1. What is the context of the problem that we're trying to fix?
+**General**
+1. What is the context of the problem we're trying to solve?
 2. Who are the users?
-- in the context of trains for scope 2, a user that is searching for the next station to buy its ticket might want to have some suggested stations and a simple and clear design. 
-- A train operator might want to have more options and control.
-3. Is there a design system precent? Consistency with design is important for the user experience, therefore if there is a design system precent, follow its conventies to asure this.
+   - For Scope 2, in a train-station context, a user searching for their next station to buy a ticket might benefit from suggested stations and a simple, clear design.
+   - A train operator might need more options and finer control.
+3. Is there an existing design system? Consistency with existing design patterns matters for user experience, so if one exists, its conventions should be followed.
 
-**Question scope 3.**
-1. What do you mean by emit a normalised filter payload? 
-2. Why would you have multiple origins and multiple destinations?
+**Scope 3**
+1. What is meant by "emit a normalised filter payload"?
+2. Why would there be multiple origins and multiple destinations?
 
 ### Assumptions
 
-### Thoughts
+In the absence of answers to the open questions above, the following assumptions are made to keep the scope implementable:
+
+- **No live backend:** No backend or API is available, so option data is static/mocked rather than fetched from a real service (this is also why `Intl.DisplayNames` was ruled out — see Scope 2).
+- **List size:** Station lists are assumed small enough that a basic (non-virtualised) list and lazy-loaded options are sufficient, per the assignment's note that virtualisation is optional and a basic list is acceptable.
+- **No design system:** No existing design system is provided, so MUI's default theme and components are used as the design foundation rather than custom styling.
+- **Normalised filter payload:** Interpreted as an object with `origins: Station[]` and `destinations: Station[]` (or their ids), deduplicated, in a consistent shape regardless of how many chips are selected — pending clarification from the open question above.
+- **Single-page scope:** "Realistic scenario" is interpreted as a single-page journey search filter panel, without routing, per the deliverables section of the assignment.
+- **English-only UI:** The demo UI only needs to support English, since localisation is explicitly out of scope.
+
+### Design Thoughts
 
 **UI/UX**
-It's always good to remember the 10 heuritics of Nielsen Norman when building features. For example:
 
-*Heuristic 2: Match between System and the Real World*
-It's important to speak the language of the user, for example a user thats buys a ticket a "station" is where he boards the station. But maybe the train operator doesn't call that the "station" but he calles it the "terminal". So this ambiguous language is important to speak the language of the user.
+It's worth keeping Nielsen Norman's 10 usability heuristics in mind when building features. For example:
 
-**Build manager**
-Because this will be a simple project i would go with NPM, alternative would be Bun because its very fast. If your working in a monorepo PNPM or Nx or TurboRepo would be an option.
+*Heuristic 2: Match Between System and the Real World* — it's important to speak the user's language. A ticket-buying user might call something a "station," while a train operator might call the same thing a "terminal." Being aware of this kind of terminology mismatch matters when naming UI elements.
+
+**Build Tooling**
+
+Since this is a small, standalone project, npm is a reasonable choice, with Bun as a faster alternative. In a monorepo setting, pnpm, Nx, or Turborepo would be worth considering instead.
