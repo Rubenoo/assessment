@@ -55,7 +55,7 @@ function StationMultiAutocomplete({
                 <TextField
                     {...params}
                     label={label}
-                    placeholder={placeholder}
+                    placeholder={disabled ? undefined : placeholder}
                     error={error}
                     helperText={helperText}
                 />
