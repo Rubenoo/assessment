@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import { spacingTokens } from '../theme/spacing';
 import StationMultiAutocomplete from './StationMultiAutocomplete';
 import MirrorToggle from './MirrorToggle';
+import OriginDestinationSummary from './OriginDestinationSummary';
 import useOriginDestinationForm from './useOriginDestinationForm';
 import { hasOverlap, type OriginDestinationFilter } from './originDestinationFilter';
 
@@ -11,7 +12,7 @@ interface MultiOriginDestinationFilterProps {
 }
 
 function MultiOriginDestinationFilter({ onFilterChange }: MultiOriginDestinationFilterProps) {
-    const { control, mirror, getValues, setMirror } = useOriginDestinationForm({ onFilterChange });
+    const { control, mirror, getValues, setMirror, filter, hasOverlapWarning } = useOriginDestinationForm({ onFilterChange });
 
     return (
         <Stack sx={{ gap: spacingTokens.md }}>
@@ -33,8 +34,7 @@ function MultiOriginDestinationFilter({ onFilterChange }: MultiOriginDestination
                 rules={{
                     validate: {
                         noOverlapWithOrigins: (destinations) =>
-                            mirror ||
-                            !hasOverlap(getValues('origins'), destinations) ||
+                            !hasOverlap(getValues('origins'), destinations, getValues('mirror')) ||
                             "A destination can't also be an origin",
                     },
                 }}
@@ -57,6 +57,7 @@ function MultiOriginDestinationFilter({ onFilterChange }: MultiOriginDestination
                     <MirrorToggle checked={field.value} onChange={setMirror} />
                 )}
             />
+            <OriginDestinationSummary filter={filter} hasOverlapWarning={hasOverlapWarning} />
         </Stack>
     );
 }
