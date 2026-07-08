@@ -1,12 +1,10 @@
 import Container from '@mui/material/Container';
-// import useThemeMode from './theme/useThemeMode';
+import StationAutocomplete from './autocomplete/StationAutocomplete';
 
 function Content() {
-    // const { mode, toggleMode } = useThemeMode();
-
     return (
         <Container component="section" maxWidth="sm">
-
+            <StationAutocomplete />
         </Container>
     )
 }
