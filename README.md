@@ -11,7 +11,7 @@ For development, make sure you have the following dependencies installed on your
 1. Run `npm install` to install the required dependencies.
 2. Run `npm run dev` to start the development server.
 3. Run `npm run build` to build the production application.
-4. Run `serve -s dist` to locally preview the production build.
+4. Run `npx serve -s dist` to locally preview the production build.
 
 ## Architecture Overview
 
@@ -35,7 +35,13 @@ The sections below capture the thought process and technical direction used to p
 2. Write this planning document before starting to code.
 3. Review the document with Claude to validate the technical direction before implementation.
    - Prompt used: *"Hey Claude, here is my assessment and my thought process and technical direction. Review this, give me feedback and make sure I follow best practices. After this, return the whole md file in correct English and good structure."*
-4. Review the implemented code with Claude Code.
+4. Set up the base project following the Vite + React documentation, and set up MUI following its own documentation.
+5. Implement and test Scope 1 first, since it's an isolated feature compared to Scopes 2 and 3. I'd open a focused pull request that can be reviewed and merged into a feature branch — this keeps the pull request small and easy to review while maintaining steady progress.
+6. Implement and test Scope 2.
+7. Implement and test Scope 3.
+8. Review the implemented code with Claude Code.
+9. Finish and review the README, and check that all requirements are met.
+
 
 ### Technical Approach
 
@@ -79,9 +85,11 @@ Options are lazily loaded where the result set is reasonably small, so the UI is
 
 ### Testing
 
-Unit testing uses Vitest with React Testing Library. Tests stay simple and clear. For MUI components, only a happy-path test is written, and the underlying MUI inputs aren't separately tested, since MUI is a well-established library with thorough test coverage of its own. Custom logic is always tested.
+Unit testing uses Vitest. Tests stay simple and clear. For MUI components, only a happy-path test is written, and the underlying MUI inputs aren't separately tested, since MUI is a well-established library with thorough test coverage of its own. Custom logic is always tested.
 
 Test descriptions are written to double as documentation (in the spirit of TDD): a test named "allows the user to mirror destination and origin to plan their return journey more easily" communicates intent far better than something like "typing 'a' populates the input." Solid unit test coverage also allows integration and end-to-end tests to stay minimal, since those are comparatively expensive to write and run.
+
+Accessibility testing can be automated with axe, integrated into Playwright, Cypress, or as a Storybook addon. For manual testing, I use the WAVE Evaluation Tool.
 
 ### Out of Scope
 
@@ -92,6 +100,7 @@ Test descriptions are written to double as documentation (in the spirit of TDD):
 - **Authentication:** In a real project, I'd expect authenticated calls to backend services, likely via Axios or an Orval-generated client with an interceptor handling JWT-based authorization. CASL could handle frontend permission checks — always paired with equivalent checks on the backend, since frontend-only permission checks are not a substitute for backend enforcement.
 - **Localisation** (e.g. i18n) is out of scope.
 - **CI/CD pipeline** setup is out of scope.
+- **AI-assisted development optimisation:** To make Claude Code more efficient (and cost-effective) on this project, I'd consider [CodeGraph](https://github.com/colbymchenry/codegraph) to build a graph of the codebase that Claude Code can use as context. This becomes a bigger win as the codebase grows, but for the small codebase in this assignment, it's out of scope.
 
 ### Open Questions
 
@@ -101,6 +110,7 @@ Test descriptions are written to double as documentation (in the spirit of TDD):
    - For Scope 2, in a train-station context, a user searching for their next station to buy a ticket might benefit from suggested stations and a simple, clear design.
    - A train operator might need more options and finer control.
 3. Is there an existing design system? Consistency with existing design patterns matters for user experience, so if one exists, its conventions should be followed.
+4. What are the organisation's coding conventions?
 
 **Scope 3**
 1. What is meant by "emit a normalised filter payload"?
@@ -128,3 +138,7 @@ It's worth keeping Nielsen Norman's 10 usability heuristics in mind when buildin
 **Build Tooling**
 
 Since this is a small, standalone project, npm is a reasonable choice, with Bun as a faster alternative. In a monorepo setting, pnpm, Nx, or Turborepo would be worth considering instead.
+
+**Risks**
+
+For every new feature, I check what potential security risks it could introduce. For this project, I don't see any specific risks introduced by these components themselves. That said, I'd double-check that the API backing the filter and autocomplete has rate-limiting and a solid caching strategy in place, to ensure it can handle load from a large number of concurrent users.
