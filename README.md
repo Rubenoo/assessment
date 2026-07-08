@@ -15,15 +15,21 @@ For development, make sure you have the following dependencies installed on your
 
 ## Architecture Overview
 
-*To be written after implementation — 1–2 paragraphs summarising the final component structure, key decisions, and how the three components (ThemeProvider, Autocomplete, Multi-Origin-Destination Filter) compose together in the demo app.*
+`main.tsx` wraps the app in MUI's `ThemeProvider` (with `CssBaseline`) and renders `App`, which composes `Header` (title + theme toggle) and `Content` (the demo page). `Content` renders the two feature components side by side: `MultiOriginDestinationFilter` (Scope 3) and a standalone `StationAutocomplete` (Scope 2), so both scopes are visible together in one realistic "journey search" panel.
+
+Both Autocomplete surfaces are thin configurations of MUI's `Autocomplete`, not a bespoke implementation — keyboard navigation, chip rendering/removal, and the clear-all control all come from MUI's own accessible, well-tested behaviour. What is custom is the data layer: `useStationSearchData` (debounced, cancels stale requests, accepts an optional `onSearch` override) and `useStationAutocompleteBase`, which wraps it and returns the MUI props shared by both the single- and multi-select Autocomplete components, so that shared configuration (loading/empty text, option equality, filtering) lives in one place instead of being duplicated. Match highlighting is a small pure function (`getMatchParts`) consumed by both. Scope 3's form state is managed by `react-hook-form`; the origin/destination overlap check and the "mirror" behaviour are pure, independently tested functions (`originDestinationFilter.ts`) rather than logic embedded in the component.
 
 ## Design & Theming Approach
 
-*To be written after implementation — palette, spacing tokens, light/dark mode strategy, and how `useThemeMode` is exposed and consumed.*
+The theme (`theme.ts`) uses MUI's `colorSchemes` API to define a light and dark palette (primary/secondary/background) that both resolve through CSS variables, so mode switching doesn't require a remount. `spacingTokens` (`spacing.ts`) is a small named scale (`xs`–`xl`) used directly in `sx` props (e.g. `sx={{ gap: spacingTokens.md }}`) to keep spacing consistent across components without every call site hard-coding numbers.
+
+`useThemeMode` wraps MUI's `useColorScheme` hook and exposes a minimal `{ mode, toggleMode }` API. `Header` consumes it to drive a `Switch` that toggles between light and dark — this is the theme toggle required by the demo page.
 
 ## Accessibility Notes
 
-*To be written after implementation — roles, keyboard support, focus management, and contrast considerations actually applied in the components.*
+Accessibility is achieved primarily by leaning on MUI's own accessible components rather than adding custom ARIA: `Autocomplete` provides keyboard navigation (↑/↓/Enter/Esc), chip removal (Backspace/Delete), and a clear-all control out of the box; `TextField` keeps labels always visible (never placeholder-only) and wires `label`/`helperText`/`error` to the input's accessible name and description automatically. The destination field's overlap validation error is surfaced through `TextField`'s `error`/`helperText` props, so it's announced the same way any other field error would be.
+
+Match highlighting is currently done with font-weight only (bold matched substrings), which is a visual-only cue — it is not conveyed to screen readers. If this were taken further, wrapping matched segments in a semantic `<mark>` element would be the fix.
 
 ## Planning Notes
 

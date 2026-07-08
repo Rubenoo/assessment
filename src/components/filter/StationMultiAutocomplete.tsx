@@ -2,10 +2,12 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import type { Station } from '../../data/stations/station';
-import useStationSearchData from '../../data/stations/useStationSearchData';
+import useStationAutocompleteBase, {
+    type UseStationAutocompleteBaseOptions,
+} from '../../data/stations/useStationAutocompleteBase';
 import StationLabel from '../autocomplete/StationLabel';
 
-interface StationMultiAutocompleteProps {
+interface StationMultiAutocompleteProps extends UseStationAutocompleteBaseOptions {
     label: string;
     placeholder?: string;
     value: Station[];
@@ -23,29 +25,20 @@ function StationMultiAutocomplete({
     disabled,
     error,
     helperText,
+    onSearch,
+    debounceMs,
 }: StationMultiAutocompleteProps) {
-    const { query, setQuery, options, loading, open, onOpen, onClose } = useStationSearchData();
+    const { query, ...autocompleteProps } = useStationAutocompleteBase({ onSearch, debounceMs });
 
     return (
         <Autocomplete<Station, true>
+            {...autocompleteProps}
             multiple
             disabled={disabled}
             filterSelectedOptions
             disableCloseOnSelect
-            open={open}
-            onOpen={onOpen}
-            onClose={onClose}
-            inputValue={query}
-            onInputChange={(_event, newQuery) => setQuery(newQuery)}
-            options={options}
-            loading={loading}
-            filterOptions={(x) => x}
             value={value}
             onChange={(_event, stations) => onChange(stations)}
-            getOptionLabel={(station) => station.name}
-            isOptionEqualToValue={(station, other) => station.id === other.id}
-            noOptionsText={query ? 'No stations found' : 'Start typing to search a station'}
-            loadingText="Searching stations…"
             renderOption={(props, station) => (
                 <Box component="li" {...props} key={station.id}>
                     <StationLabel station={station} query={query} />

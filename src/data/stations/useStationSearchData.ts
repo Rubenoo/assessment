@@ -22,13 +22,24 @@ function useStationSearchData({ onSearch, debounceMs = 200 }: UseStationSearchDa
 
         const timeout = setTimeout(() => {
             const search = onSearch ?? searchStations;
-            search(query).then((results) => {
-                if (stale) {
-                    return;
-                }
-                setOptions(results);
-                setLoading(false);
-            });
+            search(query)
+                .then((results) => {
+                    if (stale) {
+                        return;
+                    }
+                    setOptions(results);
+                })
+                .catch(() => {
+                    if (stale) {
+                        return;
+                    }
+                    setOptions([]);
+                })
+                .finally(() => {
+                    if (!stale) {
+                        setLoading(false);
+                    }
+                });
         }, debounceMs);
 
         return () => {

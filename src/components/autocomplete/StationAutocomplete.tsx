@@ -2,27 +2,20 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import type { Station } from '../../data/stations/station';
-import useStationSearchData from '../../data/stations/useStationSearchData';
+import useStationAutocompleteBase, {
+    type UseStationAutocompleteBaseOptions,
+} from '../../data/stations/useStationAutocompleteBase';
 import StationLabel from './StationLabel';
 
-function StationAutocomplete() {
-    const { query, setQuery, options, loading, open, onOpen, onClose } = useStationSearchData();
+type StationAutocompleteProps = UseStationAutocompleteBaseOptions;
+
+function StationAutocomplete({ onSearch, debounceMs }: StationAutocompleteProps = {}) {
+    const { query, ...autocompleteProps } = useStationAutocompleteBase({ onSearch, debounceMs });
 
     return (
         <Autocomplete<Station>
-            open={open}
-            onOpen={onOpen}
-            onClose={onClose}
-            inputValue={query}
-            onInputChange={(_event, value) => setQuery(value)}
-            options={options}
-            loading={loading}
-            filterOptions={(x) => x}
+            {...autocompleteProps}
             groupBy={(station) => station.group}
-            getOptionLabel={(station) => station.name}
-            isOptionEqualToValue={(station, value) => station.id === value.id}
-            noOptionsText={query ? 'No stations found' : 'Start typing to search a station'}
-            loadingText="Searching stations…"
             renderOption={(props, station) => (
                 <Box component="li" {...props} key={station.id}>
                     <StationLabel station={station} query={query} />

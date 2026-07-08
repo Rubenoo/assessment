@@ -15,7 +15,7 @@ function OriginDestinationSummary({ filter, hasOverlapWarning }: OriginDestinati
                 {describeFilter(filter)}
             </Typography>
             {hasOverlapWarning && (
-                <Typography variant="body1" color="warning.main">
+                <Typography variant="body1" color="warning">
                     A station appears in both origins and destinations.
                 </Typography>
             )}
