@@ -11,11 +11,11 @@ interface OriginDestinationSummaryProps {
 function OriginDestinationSummary({ filter, hasOverlapWarning }: OriginDestinationSummaryProps) {
     return (
         <Stack sx={{ gap: spacingTokens.xs }}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" color="text.secondary">
                 {describeFilter(filter)}
             </Typography>
             {hasOverlapWarning && (
-                <Typography variant="body2" color="warning.main">
+                <Typography variant="body1" color="warning.main">
                     A station appears in both origins and destinations.
                 </Typography>
             )}
